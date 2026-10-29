@@ -1,0 +1,314 @@
+
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ChatUz</title>
+<style>
+:root {
+  --bg:#0b1220; --panel:#111c2e; --panel2:#17243a;
+  --input:#1b2a41; --blue:#3987ff; --text:#eef4ff;
+  --muted:#8fa3c1; --border:#24344d; --green:#35d49a;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:Segoe UI,Arial,sans-serif; height:100vh;
+}
+button,input { font:inherit; }
+button { cursor:pointer; }
+#auth {
+  height:100vh; display:flex; align-items:center;
+  justify-content:center; padding:20px;
+}
+.card {
+  width:100%; max-width:420px; background:var(--panel);
+  padding:34px; border:1px solid var(--border); border-radius:20px;
+  box-shadow:0 20px 70px #0005;
+}
+.brand { font-size:30px; font-weight:800; margin-bottom:8px; }
+.subtitle { color:var(--muted); margin-bottom:28px; }
+label { display:block; color:var(--muted); font-size:12px;
+  font-weight:bold; margin:18px 0 8px; }
+input {
+  width:100%; border:1px solid var(--border); border-radius:10px;
+  padding:13px; color:var(--text); background:var(--input);
+  outline:none;
+}
+input:focus { border-color:var(--blue); }
+.btn {
+  border:0; border-radius:10px; padding:12px 16px;
+  background:var(--blue); color:white; font-weight:700;
+}
+.btn.secondary { background:var(--panel2); }
+.full { width:100%; margin-top:12px; }
+#app {
+  display:none; height:100vh; padding:12px;
+  gap:12px; grid-template-columns:280px minmax(0,1fr) 220px;
+}
+.panel {
+  background:var(--panel); border:1px solid var(--border);
+  border-radius:15px; min-height:0; overflow:hidden;
+}
+.sidebar { display:flex; flex-direction:column; }
+.logo { font-size:24px; font-weight:800; padding:22px 18px 12px; }
+.search { margin:8px 12px 18px; width:calc(100% - 24px); }
+.section { color:#6f84a3; font-size:11px; font-weight:bold;
+  padding:0 18px 8px; }
+#users { overflow:auto; padding:0 8px; flex:1; }
+.user {
+  display:flex; align-items:center; gap:11px; padding:12px;
+  border-radius:11px; cursor:pointer; margin-bottom:4px;
+}
+.user:hover,.user.active { background:#203d65; }
+.avatar {
+  width:43px; height:43px; flex-shrink:0; border-radius:50%;
+  display:grid; place-items:center; font-weight:800; font-size:17px;
+  background:linear-gradient(135deg,#3987ff,#875cf6);
+}
+.user-name { font-weight:700; overflow-wrap:anywhere; }
+.preview { color:var(--muted); font-size:12px; margin-top:4px; }
+.me {
+  padding:15px; background:#0e1727; display:flex;
+  align-items:center; gap:10px;
+}
+.center { display:flex; flex-direction:column; min-width:0; }
+.chat-head {
+  padding:15px 20px; background:var(--panel);
+  border-bottom:1px solid var(--border); display:flex;
+  align-items:center; gap:12px;
+}
+.online { color:var(--green); font-size:12px; margin-top:4px; }
+#messages {
+  flex:1; overflow:auto; padding:22px;
+  display:flex; flex-direction:column; gap:12px;
+  background:radial-gradient(ellipse at top,#13223b 0%,var(--bg) 65%);
+}
+.bubble {
+  max-width:75%; padding:12px 15px; border-radius:15px;
+  background:#19283d; overflow-wrap:anywhere; white-space:pre-wrap;
+}
+.bubble.mine { align-self:flex-end; background:#245ca8; }
+.stamp { font-size:10px; color:#b7c9e3; text-align:right; margin-top:6px; }
+.composer {
+  display:flex; gap:10px; padding:14px;
+  background:var(--panel); border-top:1px solid var(--border);
+}
+.composer input { flex:1; min-width:0; }
+#profile { padding:22px 16px; text-align:center; }
+.profile-avatar {
+  width:82px;height:82px;border-radius:50%;display:grid;
+  place-items:center;margin:8px auto 15px;font-size:30px;
+  background:linear-gradient(135deg,#3987ff,#875cf6);
+}
+.profile-info {
+  text-align:left; color:var(--muted); font-size:13px;
+  border-top:1px solid var(--border); margin-top:20px;padding-top:18px;
+  line-height:1.8; overflow-wrap:anywhere;
+}
+.empty { margin:auto; text-align:center; color:var(--muted); padding:25px; }
+.empty strong { display:block; color:var(--text); font-size:22px; margin-bottom:10px; }
+#status { font-size:12px; color:var(--muted); margin-top:14px; }
+@media(max-width:900px) {
+  #app { grid-template-columns:230px minmax(0,1fr); }
+  #profile-panel { display:none; }
+}
+@media(max-width:600px) {
+  #app { padding:0; gap:0; grid-template-columns:1fr; }
+  #list-panel { display:flex; }
+  #chat-panel { display:none; }
+  #app.chat-open #list-panel { display:none; }
+  #app.chat-open #chat-panel { display:flex; }
+  .panel { border-radius:0; }
+}
+</style>
+</head>
+<body>
+<section id="auth">
+  <div class="card">
+    <div class="brand">➤ ChatUz</div>
+    <div class="subtitle">Yaqinlaring bilan tez va oson suhbatlash.</div>
+    <label>FOYDALANUVCHI NOMI</label>
+    <input id="username" autocomplete="username" placeholder="Username">
+    <label>PAROL</label>
+    <input id="password" type="password" autocomplete="current-password" placeholder="Parol">
+    <button class="btn full" onclick="login()">Kirish →</button>
+    <button class="btn secondary full" onclick="register()">Yangi akkaunt yaratish</button>
+    <div id="status"></div>
+  </div>
+</section>
+
+<section id="app">
+  <aside id="list-panel" class="panel sidebar">
+    <div class="logo">➤ ChatUz</div>
+    <input class="search" id="search" placeholder="⌕  Qidirish..." oninput="renderUsers()">
+    <div class="section">XABARLAR</div>
+    <div id="users"></div>
+    <div class="me">
+      <div class="avatar" id="my-avatar">?</div>
+      <div style="flex:1;min-width:0">
+        <div id="my-name" class="user-name"></div>
+        <div class="online">● Akkauntingiz</div>
+      </div>
+      <button class="btn secondary" onclick="logout()">↪</button>
+    </div>
+  </aside>
+
+  <main id="chat-panel" class="panel center">
+    <div id="chat-head" class="chat-head">
+      <div class="empty" style="padding:0">Chap tomondan foydalanuvchini tanlang.</div>
+    </div>
+    <div id="messages"><div class="empty"><strong>Suhbatni boshlang</strong>Foydalanuvchini tanlang.</div></div>
+    <form class="composer" onsubmit="sendMessage(event)">
+      <input id="message" placeholder="Xabar yozing..." autocomplete="off">
+      <button class="btn" type="submit">➤</button>
+    </form>
+  </main>
+
+  <aside id="profile-panel" class="panel">
+    <div id="profile">
+      <div class="profile-avatar" id="profile-avatar">✦</div>
+      <div id="profile-name" style="font-size:19px;font-weight:800">ChatUz</div>
+      <div class="online">● Foydalanuvchi</div>
+      <div class="profile-info" id="profile-info">ChatUz — shaxsiy suhbatlar.</div>
+    </div>
+  </aside>
+</section>
+
+<script>
+// Sayt hostingga chiqqach, shu manzilni haqiqiy API manziliga almashtir.
+const API = "http://127.0.0.1:8000";
+let token = "", me = "", selected = "", users = [], timer = null;
+let lastSignature = "";
+
+async function request(path, method="GET", data=null) {
+  const headers = {};
+  if (data) headers["Content-Type"] = "application/json";
+  if (token) headers["Authorization"] = "Bearer " + token;
+  const response = await fetch(API + path, {
+    method, headers, body: data ? JSON.stringify(data) : null
+  });
+  const result = await response.json().catch(() => ({}));
+  if (!response.ok) throw Error(result.detail || "Xatolik yuz berdi");
+  return result;
+}
+function status(text) {
+  document.getElementById("status").textContent = text;
+}
+async function register() {
+  try {
+    await request("/register","POST",{
+      username: document.getElementById("username").value.trim(),
+      password: document.getElementById("password").value
+    });
+    status("Akkaunt yaratildi. Endi tizimga kiring.");
+  } catch(e) { status(e.message); }
+}
+async function login() {
+  try {
+    const result = await request("/login","POST",{
+      username: document.getElementById("username").value.trim(),
+      password: document.getElementById("password").value
+    });
+    token = result.token; me = result.username;
+    document.getElementById("auth").style.display = "none";
+    document.getElementById("app").style.display = "grid";
+    document.getElementById("my-name").textContent = me;
+    document.getElementById("my-avatar").textContent = me[0].toUpperCase();
+    await loadUsers();
+    clearInterval(timer);
+    timer = setInterval(() => {
+      if (selected) loadMessages();
+    }, 2500);
+  } catch(e) { status(e.message); }
+}
+async function loadUsers() {
+  try {
+    users = (await request("/users")).map(u => u.username);
+    renderUsers();
+  } catch(e) { console.error(e); }
+}
+function renderUsers() {
+  const query = document.getElementById("search").value.toLowerCase();
+  const list = document.getElementById("users");
+  list.replaceChildren();
+  users.filter(name => name.toLowerCase().includes(query)).forEach(name => {
+    const row = document.createElement("div");
+    row.className = "user" + (name === selected ? " active" : "");
+    const av = document.createElement("div");
+    av.className = "avatar"; av.textContent = name[0].toUpperCase();
+    const info = document.createElement("div");
+    const title = document.createElement("div");
+    title.className = "user-name"; title.textContent = name;
+    const preview = document.createElement("div");
+    preview.className = "preview"; preview.textContent = "Shaxsiy chat";
+    info.append(title, preview); row.append(av, info);
+    row.onclick = () => chooseUser(name);
+    list.append(row);
+  });
+}
+async function chooseUser(name) {
+  selected = name; lastSignature = "";
+  document.getElementById("app").classList.add("chat-open");
+  document.getElementById("chat-head").replaceChildren();
+  const av = document.createElement("div");
+  av.className = "avatar"; av.textContent = name[0].toUpperCase();
+  const info = document.createElement("div");
+  const title = document.createElement("div");
+  title.className = "user-name"; title.textContent = name;
+  const sub = document.createElement("div");
+  sub.className = "online"; sub.textContent = "● ChatUz foydalanuvchisi";
+  info.append(title,sub);
+  document.getElementById("chat-head").append(av,info);
+  document.getElementById("profile-avatar").textContent = name[0].toUpperCase();
+  document.getElementById("profile-name").textContent = name;
+  document.getElementById("profile-info").textContent = "Username: " + name;
+  renderUsers();
+  await loadMessages();
+}
+async function loadMessages() {
+  if (!selected || !token) return;
+  try {
+    const query = new URLSearchParams({with_user:selected});
+    const list = await request("/messages?" + query.toString());
+    const signature = JSON.stringify(list.map(m => [m.id,m.body,m.sender]));
+    if (signature === lastSignature) return;
+    lastSignature = signature;
+    const box = document.getElementById("messages");
+    box.replaceChildren();
+    list.forEach(m => {
+      const bubble = document.createElement("div");
+      bubble.className = "bubble" + (m.sender === me ? " mine" : "");
+      bubble.textContent = m.body;
+      const stamp = document.createElement("div");
+      stamp.className = "stamp";
+      stamp.textContent = (m.created_at || "").slice(11,16);
+      bubble.append(stamp); box.append(bubble);
+    });
+    box.scrollTop = box.scrollHeight;
+  } catch(e) { console.error(e); }
+}
+async function sendMessage(event) {
+  event.preventDefault();
+  const input = document.getElementById("message");
+  const body = input.value.trim();
+  if (!body || !selected) return;
+  try {
+    await request("/messages","POST",{body,recipient:selected});
+    input.value = ""; lastSignature = "";
+    await loadMessages();
+  } catch(e) { alert(e.message); }
+}
+async function logout() {
+  try { await request("/logout","POST"); } catch(e) {}
+  clearInterval(timer); token = ""; me = ""; selected = "";
+  document.getElementById("app").style.display = "none";
+  document.getElementById("app").classList.remove("chat-open");
+  document.getElementById("auth").style.display = "flex";
+  document.getElementById("password").value = "";
+  status("Tizimdan chiqildi.");
+}
+</script>
+</body>
+</html>
